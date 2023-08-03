@@ -5,12 +5,20 @@ from dotenvy import load_env, read_file
 import argparse
 import asyncio
 from time import sleep
-
-# fuck.py -chats=chats.txt -msg=msg.txt -env=./.env
+import sys
+# spamtg.py -chats=src/chats.txt -msg=src/msg.txt -env=src/.env
 parser = argparse.ArgumentParser(description="Files for spamming")
 parser.add_argument('-chats', metavar='your chats', type=str, help='Path to your links of chat')
 parser.add_argument('-msg', metavar='message', type=str, help='Path to your message')
 parser.add_argument('-env', metavar='your profile', type=str, help='Path to your .env file with api')
+
+args = parser.parse_args()
+chats = args.chats
+msg_user = open(args.msg, 'r').read()
+env = args.env
+
+load_env(read_file(env))
+
 api_id = environ.get("API_ID")
 api_hash = environ.get("API_HASH")
 app = Client("my_account", api_id, api_hash)
@@ -25,7 +33,7 @@ async def is_user_in_chat(chat_id):
         return False
 
 
-@app.on_message(filters.command('tart', prefixes='s'))
+@app.on_message(filters.command('start', prefixes='/'))
 async def start(client, msg):
     while True:
         for chat_link in fc:
@@ -41,15 +49,12 @@ async def start(client, msg):
                 print('We done! Sending messages is prohibited')
             except BadRequest as e:
                 print(f'{e}')
-            sleep(5)
+            if chat_link == fc[-1]:
+                sys.exit()
+        sleep(10)
 
 
 if __name__ == '__main__':
-    args = parser.parse_args()
-    chats = args.chats
-    msg_user = open(args.msg, 'r').read()
-    env = args.env
-    load_env(read_file(env))
     link = open(chats, 'r')
     fc = []
     for i in link:
