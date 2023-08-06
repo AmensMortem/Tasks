@@ -35,21 +35,20 @@ async def is_user_in_chat(chat_id):
 
 @app.on_message(filters.command('start', prefixes='/'))
 async def start(client, msg):
-    while True:
-        for chat_link in fc:
-            try:
-                chat_id = await app.get_chat(f'@{chat_link}')
-                is_user_present = await is_user_in_chat(chat_id)
-                if not is_user_present:
-                    await app.join_chat(chat_id.id)
+    for chat_link in fc:
+        try:
+            chat_id = await app.get_chat(f'@{chat_link}')
+            is_user_present = await is_user_in_chat(chat_id)
+            if not is_user_present:
+                await app.join_chat(chat_id.id)
                 await app.send_message(chat_id=chat_id.id, text=f'{msg_user}')
-            except ChatAdminRequired:
-                print(f'The group({chat_link}) should be open or you have to be administrator')
-            except PeerFlood:
-                print('We done! Sending messages is prohibited')
-            except BadRequest as e:
-                print(f'{e}')
-            sleep(5)
+        except ChatAdminRequired:
+            print(f'The group({chat_link}) should be open or you have to be administrator')
+        except PeerFlood:
+            print('We done! Sending messages is prohibited')
+        except BadRequest as e:
+            print(f'{e}')
+        sleep(5)
 
 
 if __name__ == '__main__':
