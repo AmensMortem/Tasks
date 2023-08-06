@@ -8,10 +8,10 @@ from oauth2client.service_account import ServiceAccountCredentials
 import requests
 import subprocess
 
-load_env(read_file('src/.env'))
-auth_git = Auth.Token(environ.get("GitToken"))  # gitHub
+load_env(read_file('.env'))
+auth_git = Auth.Token(environ.get("GIT_TOKEN"))  # gitHub
 gitHubAuth = Github(auth=auth_git)
-json_key = 'src/small-394913-470a0e673114.json'  # Google Sheets
+json_key = './small-394913-470a0e673114.json'  # Google Sheets
 scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_name(json_key, scope)
@@ -23,8 +23,8 @@ data = worksheet.get_all_values()[1:]  # Получаем все значени�
 
 
 def error(exception):
-    bot_token = environ.get('botToken')
-    chat_id = environ.get('chat_id')
+    bot_token = environ.get('BOT_TOKEN')
+    chat_id = environ.get('CHAT_ID')
     message = str(exception)
     url = f'https://api.telegram.org/bot{bot_token}/sendMessage'
     params = {
@@ -96,7 +96,7 @@ def start(event_path):
 
 
 if __name__ == '__main__':
-    repository_url = environ.get("url_repo")
-    repo_path = './project'
+    repository_url = environ.get("URL_REPO")
+    repo_path = './'
     if clone_repository(repository_url, repo_path):
         start(repo_path + '/upcoming-events/')
