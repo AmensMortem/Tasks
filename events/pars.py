@@ -7,6 +7,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import requests
 import subprocess
+import pathlib
+import sys
 
 load_env(read_file('.env'))
 auth_git = Auth.Token(environ.get("GIT_TOKEN"))  # gitHub
@@ -54,8 +56,8 @@ def push(title, repo_path):
     file_path = f'{repo_path}/{title}'
     commit_message = 'update'
     try:
-        subprocess.run(['git', 'add', file_path], cwd=repo_path, check=True)
-        subprocess.run(['git', 'commit', '-m', commit_message], cwd=repo_path, check=True)
+        subprocess.run(['pwd'], stdout=sys.stdout, cwd=repo_path)
+        subprocess.run(['git', 'commit', '-am', commit_message], cwd=repo_path, check=True)
         subprocess.run(['git', 'push'], cwd=repo_path, check=True)
     except subprocess.CalledProcessError as e:
         error(e)
@@ -63,40 +65,43 @@ def push(title, repo_path):
 
 def start(event_path):
     try:
+        full_path = event_path + '/'
         events = [file for file in os.listdir(event_path) if file.endswith(".md")]
-        for i in events:
-            numerate = 0
-            with open(event_path + i, 'r', encoding="utf8") as file:
-                your_price = ''
-                partner_price = ''
-                for line in file:
+        for event in events:
+            number_of_line = 0
+            your_price, partner_price = '', ''
+            with open(full_path + event, 'r', encoding="utf8") as file:
+                for line in file.readlines():
+                    number_of_line += 1
                     if 'Цена участия' in line:
-                        list_line = line.split(' ')
-                        for number in range(len(list_line)):
-                            if any(num in list_line[number] for num in ['1', '2', '3', '4', '5', '6', '7', '8', '9']):
-                                if 'партнёр' in list_line[number + 3]:
-                                    partner_price = list_line[number]
+                        split_line = line.split(' ')
+                        for count in range(len(split_line)):
+                            if any(num in split_line[count] for num in
+                                   ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):
+                                if 'партнёр' in split_line[count + 3].lower():
+                                    partner_price = split_line[count]
                                 else:
-                                    your_price = line.split(' ')[number]
-                        for k in data:
-                            location = k[1]
-                            price_table = k[2]
-                            price_partner_table = k[3]
-                            if i in location:
+                                    your_price = split_line[count]
+                        for row in data:
+                            location = row[1]
+                            price_table = row[2]
+                            print("PRICE: ", price_table)
+                            price_partner_table = row[3]
+                            if event in location:
                                 line = line.replace(your_price, price_table)
                                 line = line.replace(partner_price, price_partner_table)
-                                with open(event_path + i, 'r', encoding='utf-8') as file2:
+                                with open(full_path + event, 'r', encoding="utf8") as file2:
                                     files_line = file2.readlines()
-                                    files_line[numerate - 1] = line + '\n'
-                                    with open(event_path + i, 'w', encoding='utf-8') as file3:
+                                    files_line[number_of_line - 1] = line + '\n'
+                                    with open(full_path + event, 'w', encoding="utf8") as file3:
                                         file3.writelines(files_line)
-                                push(i, event_path)
+                                push(event, event_path)
     except Exception as e:
         error(e)
 
 
 if __name__ == '__main__':
     repository_url = environ.get("URL_REPO")
-    repo_path = './'
+    repo_path = str(pathlib.Path(os.getcwd()).parent) + '/peredelanoconf'
     if clone_repository(repository_url, repo_path):
-        start(repo_path + '/upcoming-events/')
+        start(repo_path + '/upcoming-events')
