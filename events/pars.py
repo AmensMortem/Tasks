@@ -54,7 +54,7 @@ def clone_repository(repo_url, repo_path):
 
 def push(title, repo_path):
     file_path = f'{repo_path}/{title}'
-    commit_message = 'update'
+    commit_message = f'Update price {title}'
     try:
         subprocess.run(['pwd'], stdout=sys.stdout, cwd=repo_path)
         subprocess.run(['git', 'commit', '-am', commit_message], cwd=repo_path, check=True)
