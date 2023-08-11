@@ -9,6 +9,7 @@ import requests
 import subprocess
 import pathlib
 import sys
+import concurrent.futures
 
 load_env(read_file('.env'))
 auth_git = Auth.Token(environ.get("GIT_TOKEN"))  # gitHub
@@ -63,45 +64,51 @@ def push(title, repo_path):
         error(e)
 
 
-def start(event_path):
+def start(event):
     try:
+        repo_patha = str(pathlib.Path(os.getcwd()).parent) + '/peredelanoconf'
+        event_path = repo_patha + '/upcoming-events'
         full_path = event_path + '/'
-        events = [file for file in os.listdir(event_path) if file.endswith(".md")]
-        for event in events:
-            number_of_line = 0
-            your_price, partner_price = '', ''
-            with open(full_path + event, 'r', encoding="utf8") as file:
-                for line in file.readlines():
-                    number_of_line += 1
-                    if 'Цена участия' in line:
-                        split_line = line.split(' ')
-                        for count in range(len(split_line)):
-                            if any(num in split_line[count] for num in
-                                   ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):
-                                if 'партнёр' in split_line[count + 3].lower():
-                                    partner_price = split_line[count]
-                                else:
-                                    your_price = split_line[count]
-                        for row in data:
-                            location = row[1]
-                            price_table = row[2]
-                            print("PRICE: ", price_table)
-                            price_partner_table = row[3]
-                            if event in location:
+        number_of_line = 0
+        your_price, partner_price = '', ''
+        with open(full_path + event, 'r', encoding="utf8") as file:
+            for line in file.readlines():
+                number_of_line += 1
+                if 'Цена' in line:
+                    split_line = line.split(' ')
+                    for count in range(len(split_line)):
+                        if any(num in split_line[count] for num in
+                               ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']):
+                            if 'партнёр' in line.lower():
+                                partner_price = split_line[count]
+                            else:
+                                your_price = split_line[count]
+                    for row in data:
+                        location = row[1]
+                        price_table = row[2]
+                        price_partner_table = row[3]
+                        if event in location:
+                            if your_price != '':
                                 line = line.replace(your_price, price_table)
+                            if partner_price != '':
                                 line = line.replace(partner_price, price_partner_table)
-                                with open(full_path + event, 'r', encoding="utf8") as file2:
-                                    files_line = file2.readlines()
-                                    files_line[number_of_line - 1] = line + '\n'
-                                    with open(full_path + event, 'w', encoding="utf8") as file3:
-                                        file3.writelines(files_line)
-                                push(event, event_path)
+                            with open(full_path + event, 'r', encoding="utf8") as file2:
+                                files_line = file2.readlines()
+                                files_line[number_of_line - 1] = line + '\n'
+                                with open(full_path + event, 'w', encoding="utf8") as file3:
+                                    file3.writelines(files_line)
+        push(event, event_path)
     except Exception as e:
         error(e)
+
+
+def main(event_path):
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        executor.map(start, [file for file in os.listdir(event_path) if file.endswith(".md")])
 
 
 if __name__ == '__main__':
     repository_url = environ.get("URL_REPO")
     repo_path = str(pathlib.Path(os.getcwd()).parent) + '/peredelanoconf'
     if clone_repository(repository_url, repo_path):
-        start(repo_path + '/upcoming-events')
+        main(repo_path + '/upcoming-events')
