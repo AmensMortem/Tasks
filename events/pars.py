@@ -94,7 +94,7 @@ def start(event):
                                 line = line.replace(partner_price, price_partner_table)
                             with open(full_path + event, 'r', encoding="utf8") as file2:
                                 files_line = file2.readlines()
-                                files_line[number_of_line - 1] = line + '\n'
+                                files_line[number_of_line - 1] = line
                                 with open(full_path + event, 'w', encoding="utf8") as file3:
                                     file3.writelines(files_line)
         push(event, event_path)
