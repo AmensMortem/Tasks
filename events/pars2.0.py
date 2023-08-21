@@ -19,11 +19,11 @@ scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_name(json_key, scope)
 client = gspread.authorize(creds)  # URL к таблице Google Sheets
-sheet_url = 'https://docs.google.com/spreadsheets/d/1OIkPzOv0DgJDtJUS_7W9bQ4ome9GMCKoIcLR8yQ9hOs/edit#gid=0'
+sheet_url = 'https://docs.google.com/spreadsheets/d/15tvjjxm-y4kaxsYnJsJWXaxJaGfk_0a2YdI2iP0Keq4/edit#gid=0'
 sheet = client.open_by_url(sheet_url)  # Открываем таблицу по URL
 worksheet = sheet.get_worksheet(0)
 data = worksheet.get_all_values()[1:]  # Получаем все значения из таблицы кроме названия таблиц
-table = {'Location': 0, 'Github': 1, 'Price': 2, 'Partner price': 3, 'Discount': 4, 'Date': 5}
+table = {'Price': 7, 'Discount': 8, 'Partner price': 9, 'Github': 10}
 
 
 def error(exception):
@@ -68,23 +68,24 @@ def push(title, repo_path):
 def rewrite(path, number_of_line, delete, line):
     try:
         with open(path, 'r', encoding="utf8") as file_r:
-            if delete:
-                lines = file_r.readlines()
-                del lines[number_of_line]
-                del lines[number_of_line - 1]
-                with open(path, 'w', encoding="utf8") as file:
-                    file.writelines(lines)
-            elif delete is None:
-                lines = file_r.readlines()
-                lines.insert(number_of_line, line + '\n')
-                lines.insert(number_of_line + 1, '\n')
-                with open(path, 'w', encoding="utf8") as file:
-                    file.writelines(lines)
-            else:
-                lines = file_r.readlines()
-                lines[number_of_line] = line
-                with open(path, 'w', encoding="utf8") as file_w:
-                    file_w.writelines(lines)
+            match delete:
+                case True:
+                    lines = file_r.readlines()
+                    del lines[number_of_line]
+                    del lines[number_of_line - 1]
+                    with open(path, 'w', encoding="utf8") as file:
+                        file.writelines(lines)
+                case None:
+                    lines = file_r.readlines()
+                    lines.insert(number_of_line, line + '\n')
+                    lines.insert(number_of_line + 1, '\n')
+                    with open(path, 'w', encoding="utf8") as file:
+                        file.writelines(lines)
+                case False:
+                    lines = file_r.readlines()
+                    lines[number_of_line] = line
+                    with open(path, 'w', encoding="utf8") as file_w:
+                        file_w.writelines(lines)
     except Exception as e:
         error(e)
 
